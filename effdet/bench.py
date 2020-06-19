@@ -102,6 +102,19 @@ class DetBenchTrain(nn.Module):
                 target['img_scale'], target['img_size'])
         return output
 
+    
+class ExtendDetBenchTrain(DetBenchTrain):
+    def __init__(self, model, config):
+        super(ExtendDetBenchTrain, self).__init__(model, config)
+    
+    def forward(self, x, target):
+        class_out, box_out = self.model(x)    
+        cls_targets, box_targets, num_positives = self.anchor_labeler.batch_label_anchors(
+            x.shape[0], target['bbox'], target['cls'])
+        loss, class_loss, box_loss = self.loss_fn(class_out, box_out, cls_targets, box_targets, num_positives)
+        output = dict(loss=loss, class_loss=class_loss, box_loss=box_loss)
+        return output
+
 
 def unwrap_bench(model):
     # Unwrap a model in support bench so that various other fns can access the weights and attribs of the
